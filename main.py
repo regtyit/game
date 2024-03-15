@@ -272,7 +272,7 @@ class Player(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
 		self.nocol=1
-		self.mode='sg'
+		self.mode='ssg'
 		self.pos = pygame.math.Vector2(640,320)
 		self.image = pygame.image.load('graphics/player.png').convert_alpha()
 		self.base_player_image= self.image
@@ -332,6 +332,9 @@ class Player(pygame.sprite.Sprite):
 				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
 				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
 				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
+				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
+			elif self.mode=='ssg' and self.count>3:
+				self.count=0
 				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
 			elif self.mode!='sg' and self.count>15:
 				self.count=0
@@ -420,6 +423,7 @@ class CameraGroup(pygame.sprite.Group):
 pygame.init()
 
 pygame.mixer.music.load('graphics/mobster.mp3')
+pygame.mixer.music.set_volume(0.2)
 pygame.mixer.music.play(-1)
 
 screen = pygame.display.set_mode((1920,1080))
