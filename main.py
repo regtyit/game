@@ -227,6 +227,8 @@ class Bullet(pygame.sprite.Sprite):
 		self.vector=self.hitbox_rect.center
 		self.tan=player.tan
 		self.speed=15
+		self.coll_1=0
+		self.coll_2=0
 		self.mode=player.mode
 		self.rand_bullets()
 		self.image = pygame.transform.rotate(self.base_player_image, -self.angle+90)
@@ -234,17 +236,20 @@ class Bullet(pygame.sprite.Sprite):
 
 		self.velocity_x=self.speed*math.cos(self.tan)
 		self.velocity_y=self.speed*math.sin(self.tan)
-
+		self.coll_1=(self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*4)
+		self.coll_2=(self.rect.centerx+self.velocity_x*2,self.rect.centery+self.velocity_y*2)
+		self.collision()
 		self.vector += pygame.math.Vector2(self.velocity_x, self.velocity_y)
 		self.hitbox_rect.center = self.vector
 		self.rect.center = self.hitbox_rect.center
 		
-		self.collision_point=(self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*4)
+			
+	def collision(self):
 		for tree in trees:
-			if tree.rect.colliderect(self.rect):
+			if tree.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_1):
 				self.kill()
 		for e in enemy:
-			if e.rect.colliderect(self.rect):
+			if e.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_1):
 				self.kill()
 				e.hp-=2
 		if abs(self.rect.center[0])>5000 or abs(self.rect.center[1])>5000:
