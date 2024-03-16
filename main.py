@@ -22,18 +22,19 @@ class Enemy(pygame.sprite.Sprite):
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
-		self.speed = 15
+		self.speed = 10
 		self.flag=False
+		self.view=False
 		self.trigger=True
 		self.leader=False
-		self.tan=math.atan2(0,0)
+		self.tan=math.atan2(4,5)
 		self.collision_point=(0,0)
 		lider_list=[]
 
 	def input(self):
 		if self.cooldown>1:
 			self.cooldown-=1
-		else:
+		elif player:
 			lider_list=[]
 			for e in enemy:
 				if e.leader==True:
@@ -43,9 +44,15 @@ class Enemy(pygame.sprite.Sprite):
 			self.x_change_mouse_player = (self.coords[0] - self.rect.centerx)
 			self.y_change_mouse_player = (self.coords[1] - self.rect.centery)
 			if math.sqrt(self.x_change_mouse_player**2+self.y_change_mouse_player**2)<self.agr:
-				if self.trigger==True:
-					self.check_los()
+				if self.trigger==True or self.view==False:
+					self.um_count+=1
+					if self.um_count>25:
+						self.um_count=0
+						self.check_los_player()
 				else:
+					if self.trigger:
+						self.check_los()
+						self.um_count+=40
 					self.um_count+=1
 					if self.leader:
 						self.count+=1
@@ -59,23 +66,22 @@ class Enemy(pygame.sprite.Sprite):
 							self.l_count=0
 							self.leader=False
 
-					if self.um_count>70:
+					if self.um_count>35:
 						self.um_count=0
 						self.check_los()
 
-				if self.m_mode==True:
-					self.move()
-				elif self.m_mode==2:
-					self.move_leader()
-				else:
-					self.follow()
+					if self.m_mode==True:
+						self.move()
+					elif self.m_mode==2:
+						self.move_leader()
+					else:
+						self.follow()
 				self.trigger=False
 			else:
 				self.trigger=True
 		self.check_hp()
 
 	def follow(self):
-
 		self.angle = math.degrees(self.tan)
 		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
 		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
@@ -83,7 +89,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
 		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
 
-		self.collision_point=(self.rect.centerx+self.velocity_x*1.5,self.rect.centery+self.velocity_y*1.5)
+		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
 
 		self.collision()
 
@@ -104,7 +110,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
 		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
 
-		self.collision_point=(self.rect.centerx+self.velocity_x*1.5,self.rect.centery+self.velocity_y*1.5)
+		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
 
 		self.collision()
 
@@ -124,7 +130,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
 		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
 
-		self.collision_point=(self.rect.centerx+self.velocity_x*1.5,self.rect.centery+self.velocity_y*1.5)
+		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
 
 		self.collision()
 
@@ -135,23 +141,25 @@ class Enemy(pygame.sprite.Sprite):
 
 	def check_los(self):
 		self.coords=[]
-		lst_1=[]
+		self.lst_1=[]
 		lst_2=[]
+		# life=[]
 		for ghost in ghosts:
-			lst_1.append(ghost)
+			self.lst_1.append(ghost)
+			# life.append(ghost.life_c)
 		for ghost in l_ghosts:
 			lst_2.append(ghost)
-		if len(lst_1)>1 and len(lst_2)>1:
+		if len(self.lst_1)>1 and len(lst_2)>1:
 			if not(self.leader) and len(lider_list)>0:
 				for i in lider_list:
 					self.coords.insert(0,i)
 				self.coords.append(lst_2[-1])
 				self.coords.append(lst_2[-2])
 			else:
-				self.coords.append(lst_1[-1])
-				self.coords.append(lst_1[-2])
-				self.coords.append(lst_1[len(lst_1)//2])
-				self.coords.append(lst_1[0])
+				self.coords.append(self.lst_1[-1])
+				self.coords.append(self.lst_1[-2])
+				self.coords.append(self.lst_1[len(self.lst_1)//2])
+				self.coords.append(self.lst_1[2])
 		self.coords.insert(0,player)
 		for e in self.coords:
 			self.flag=False
@@ -159,11 +167,13 @@ class Enemy(pygame.sprite.Sprite):
 			x_change_mouse_player = (cord[0] - self.rect.centerx)
 			y_change_mouse_player = (cord[1] - self.rect.centery)
 			self.tan=math.atan2(y_change_mouse_player, x_change_mouse_player)
-			velocity_x=math.cos(self.tan)*20
-			velocity_y=math.sin(self.tan)*20
+			velocity_x=math.cos(self.tan)*25
+			velocity_y=math.sin(self.tan)*25
 			for i in range(int(x_change_mouse_player//velocity_x)):
+				if i==0:
+					i=2
 				self.collision_point=(int((self.rect.centerx+i*velocity_x)),int((self.rect.centery+i*velocity_y)))
-				# self.collision_rect=Dot(self.collision_point,camera_group)
+				self.collision_rect=Dot(self.collision_point,camera_group)
 				for tree in trees:
 					if tree.rect.collidepoint(self.collision_point):
 						self.flag=True
@@ -177,7 +187,27 @@ class Enemy(pygame.sprite.Sprite):
 			elif self.flag==False:
 				self.m_mode=False
 				break
-	
+
+	def check_los_player(self):
+		flag=False
+		cord = player.rect.center
+		x_change_mouse_player = (cord[0] - self.rect.centerx)
+		y_change_mouse_player = (cord[1] - self.rect.centery)
+		self.tan = math.atan2(y_change_mouse_player, x_change_mouse_player)
+		velocity_x=math.cos(self.tan)*29
+		velocity_y=math.sin(self.tan)*29
+		for i in range(int(x_change_mouse_player//velocity_x)):
+			if i==0:
+				i=1.5
+			collision_point=(int((self.rect.centerx+i*velocity_x)),int((self.rect.centery+i*velocity_y)))
+			# self.collision_rect=Dot(collision_point,camera_group)
+			for tree in trees:
+				if tree.rect.collidepoint(collision_point):
+					flag=True
+		if flag==False:
+			self.view=True
+		else:
+			self.view=False
 	def collision(self):
 		if player.rect.collidepoint(self.collision_point):
 			player.kill()
@@ -185,9 +215,10 @@ class Enemy(pygame.sprite.Sprite):
 			if ghost.rect.collidepoint(self.collision_point):
 				self.call_cnt+=1
 				self.leader=True
+				self.l_count-=5
 				if self not in lider_list:
 					lider_list.append(self)
-				if self.call_cnt%4==0:
+				if self.call_cnt%2==0:
 					self.check_los()
 				if self.call_cnt>30:
 					self.call_cnt=0
@@ -249,7 +280,7 @@ class Bullet(pygame.sprite.Sprite):
 			if tree.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_1):
 				self.kill()
 		for e in enemy:
-			if e.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_1):
+			if e.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_2):
 				self.kill()
 				e.hp-=2
 		if abs(self.rect.center[0])>5000 or abs(self.rect.center[1])>5000:
@@ -272,13 +303,16 @@ class Tree(pygame.sprite.Sprite):
 		super().__init__(group)
 		self.image = pygame.image.load('graphics/tree.png').convert_alpha()
 		self.rect = self.image.get_rect(topleft = pos)
+		# self.rect.w=self.rect.w-8
+		# self.rect.h=self.rect.h-8
+		self.rect = pygame.Rect(self.rect.left, self.rect.top , 30, 30)
 
 class Player(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
 		self.nocol=1
 		self.mode='ssg'
-		self.pos = pygame.math.Vector2(640,320)
+		self.pos = pygame.math.Vector2(1740,520)
 		self.image = pygame.image.load('graphics/player.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
@@ -368,7 +402,7 @@ class GhostPlayer(pygame.sprite.Sprite):
 		self.leader=False
 	def update(self):
 		self.life_c+=1
-		if self.life_c>75:
+		if self.life_c>70:
 			self.kill()
 class GhostLeader(pygame.sprite.Sprite):
 	def __init__(self,pos,rect,group):
@@ -427,16 +461,16 @@ class CameraGroup(pygame.sprite.Group):
 
 pygame.init()
 
-pygame.mixer.music.load('graphics/mobster.mp3')
-pygame.mixer.music.set_volume(0.2)
-pygame.mixer.music.play(-1)
+# pygame.mixer.music.load('graphics/mobster.mp3')
+# pygame.mixer.music.set_volume(0.2)
+# pygame.mixer.music.play(-1)
 
 screen = pygame.display.set_mode((1920,1080))
 clock = pygame.time.Clock()
 
 # setup 
 camera_group = CameraGroup()
-player = Player((640,320),camera_group)
+player = Player((1740,520),camera_group)
 
 trees=pygame.sprite.Group()
 enemy=pygame.sprite.Group()
