@@ -22,7 +22,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
-		self.speed = 10
+		self.speed = 15
 		self.flag=False
 		self.view=False
 		self.trigger=True
@@ -159,7 +159,7 @@ class Enemy(pygame.sprite.Sprite):
 				self.coords.append(self.lst_1[-1])
 				self.coords.append(self.lst_1[-2])
 				self.coords.append(self.lst_1[len(self.lst_1)//2])
-				self.coords.append(self.lst_1[2])
+				# self.coords.append(self.lst_1[2])
 		self.coords.insert(0,player)
 		for e in self.coords:
 			self.flag=False
