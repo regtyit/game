@@ -1,9 +1,9 @@
 import pygame, sys
-import numpy as np
 from random import randint,randrange
 import math
-from functools import *
 lol=True
+global_path='/data/data/com.hmandroid.hmandroid/files/app/'
+
 
 class Enemy(pygame.sprite.Sprite):
 	def __init__(self,pos,tan,group):
@@ -21,7 +21,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.um_count=30
 		self.l_count=0
 		self.cooldown=0
-		self.image = pygame.image.load('graphics/man.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/man.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
@@ -194,7 +194,7 @@ class Enemy(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
-		self.image = pygame.image.load('graphics/bullet.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/bullet.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
@@ -244,7 +244,7 @@ class Bullet(pygame.sprite.Sprite):
 class EBullet(pygame.sprite.Sprite):
 	def __init__(self,pos,tan,group):
 		super().__init__(group)
-		self.image = pygame.image.load('graphics/bullet.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/bullet.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
@@ -293,7 +293,7 @@ class EBullet(pygame.sprite.Sprite):
 class Tree(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
-		self.image = pygame.image.load('graphics/tree.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/tree.png').convert_alpha()
 		self.rect = self.image.get_rect(topleft = pos)
 		self.newrect = pygame.Rect(self.rect.left, self.rect.top , 30, 30)
 
@@ -302,8 +302,8 @@ class Player(pygame.sprite.Sprite):
 		super().__init__(group)
 		self.nocol=1
 		self.mode='ssg'
-		self.pos = pygame.math.Vector2(1740,520)
-		self.image = pygame.image.load('graphics/player.png').convert_alpha()
+		self.pos = pygame.math.Vector2(-100,700)
+		self.image = pygame.image.load(global_path+'graphics/player.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
@@ -352,7 +352,7 @@ class GhostPlayer(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
 		self.pos = pos
-		self.image = pygame.image.load('graphics/ghost.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/ghost.png').convert_alpha()
 		self.rect = player.rect
 		self.life_c=0
 		self.leader=False
@@ -364,7 +364,7 @@ class GhostLeader(pygame.sprite.Sprite):
 	def __init__(self,pos,rect,group):
 		super().__init__(group)
 		self.pos = pos
-		self.image = pygame.image.load('graphics/ghost.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/ghost.png').convert_alpha()
 		self.rect = rect.copy()
 		self.life_c=0
 		self.leader=False
@@ -377,7 +377,7 @@ class Dot(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
 		self.pos = pos
-		self.image = pygame.image.load('graphics/floor.png').convert_alpha()
+		self.image = pygame.image.load(global_path+'graphics/floor.png').convert_alpha()
 		self.rect = self.image.get_rect(center = pos)
 		self.life_c=0
 	def update(self):
@@ -388,7 +388,7 @@ class Dot(pygame.sprite.Sprite):
 class TabletMove(pygame.sprite.Sprite):
 	def __init__(self):
 		self.display_surface = pygame.display.get_surface()
-		self.image=pygame.image.load('graphics/tablet.png').convert_alpha()
+		self.image=pygame.image.load(global_path+'graphics/tablet.png').convert_alpha()
 		self.pos=(200,650)
 		self.rect = self.image.get_rect(topleft = self.pos)
 		TabletMove.global_move=False
@@ -413,7 +413,7 @@ class TabletMove(pygame.sprite.Sprite):
 class TabletShoot(pygame.sprite.Sprite):
 	def __init__(self):
 		self.display_surface = pygame.display.get_surface()
-		self.image=pygame.image.load('graphics/tablet.png').convert_alpha()
+		self.image=pygame.image.load(global_path+'graphics/tablet.png').convert_alpha()
 		self.pos=(700,650)
 		self.rect = self.image.get_rect(topleft = self.pos)
 		TabletShoot.global_shoot=False
@@ -447,7 +447,7 @@ class TabletShoot(pygame.sprite.Sprite):
 class TabletPunch(pygame.sprite.Sprite):
 	def __init__(self):
 		self.display_surface = pygame.display.get_surface()
-		self.image=pygame.image.load('graphics/punch.png').convert_alpha()
+		self.image=pygame.image.load(global_path+'graphics/punch.png').convert_alpha()
 		self.pos=(800,500)
 		self.rect = self.image.get_rect(topleft = self.pos)
 	def input(self):
@@ -468,7 +468,7 @@ class CameraGroup(pygame.sprite.Group):
 		self.half_w = self.display_surface.get_size()[0] // 2
 		self.half_h = self.display_surface.get_size()[1] // 2
 
-		self.ground_surf = pygame.image.load('graphics/ground.png').convert_alpha()
+		self.ground_surf = pygame.image.load(global_path+'graphics/ground.png').convert_alpha()
 		self.ground_rect = self.ground_surf.get_rect(topleft = (0,0))
 
 	def center_target_camera(self,target):
@@ -493,7 +493,7 @@ class CameraGroup(pygame.sprite.Group):
 
 pygame.init()
 
-pygame.mixer.music.load('graphics/mobster.mp3')
+pygame.mixer.music.load(global_path+'graphics/mobster.mp3')
 pygame.mixer.music.set_volume(0.2)
 pygame.mixer.music.play(-1)
 
@@ -502,20 +502,20 @@ clock = pygame.time.Clock()
 
 # setup 
 camera_group = CameraGroup()
-player = Player((1740,520),camera_group)
+player = Player((-100,700),camera_group)
 
 trees=pygame.sprite.Group()
 enemy=pygame.sprite.Group()
 ghosts=pygame.sprite.Group()
 dots=pygame.sprite.Group()
 l_ghosts=pygame.sprite.Group()
-coolmap=open('graphics/map.txt')
+coolmap=open(global_path+'graphics/map.txt')
 l_index = -16
 c_index = -16
 goodmap=[]
 for line in coolmap:
 	l_index += 16
-	line=line.split(',')
+	line=line.split(global_path+',')
 	c_index = -16
 	lst=[]
 	for c in line:
@@ -541,12 +541,12 @@ while lol:
 			for e in camera_group:
 				e.kill()
 			player = Player((0,0),camera_group)
-			coolmap=open('graphics/map.txt')
+			coolmap=open(global_path+'graphics/map.txt')
 			l_index = -16
 			c_index = -16
 			for line in coolmap:
 				l_index += 16
-				line=line.split(',')
+				line=line.split(global_path+',')
 				c_index = -16
 				for c in line:
 					c_index += 16
@@ -554,7 +554,7 @@ while lol:
 						trees.add(Tree((c_index,l_index),camera_group))
 					elif c[0]=='2':
 						enemy.add(Enemy(pygame.math.Vector2(c_index,l_index),float(c[2:6]),camera_group))
-	screen.fill('#C10087')
+	screen.fill(global_path+'#C10087')
 	t_move=TabletMove()
 	t_move.update()
 	
