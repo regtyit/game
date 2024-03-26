@@ -1,35 +1,42 @@
 import pygame, sys
+import numpy as np
 from random import randint,randrange
 import math
+from functools import *
 lol=True
-import pygame, sys
 
 class Enemy(pygame.sprite.Sprite):
-	def __init__(self,pos,group):
+	def __init__(self,pos,tan,group):
 		super().__init__(group)
 		global lider_list
 		self.nocol=1
 		self.agr=512
 		self.hp=6
+		self.mode=randint(0,1)
 		self.m_mode=False
 		self.pos = pos
 		self.count=0
+		self.chosen=0
+		self.call_cnt=0
 		self.um_count=30
 		self.l_count=0
-		self.call_cnt=69
 		self.cooldown=0
 		self.image = pygame.image.load('graphics/man.png').convert_alpha()
 		self.base_player_image= self.image
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
-		self.speed = 15
+		self.newrect = pygame.Rect(self.rect.left, self.rect.top , 48, 48)
+		self.speed = 13
 		self.flag=False
 		self.view=False
 		self.trigger=True
 		self.leader=False
-		self.tan=math.atan2(4,5)
+		self.tan=math.tan(tan)
+		self.angle = math.degrees(self.tan)
 		self.collision_point=(0,0)
 		lider_list=[]
+		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
+		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
 
 	def input(self):
 		if self.cooldown>1:
@@ -40,49 +47,57 @@ class Enemy(pygame.sprite.Sprite):
 				if e.leader==True:
 					lider_list.append(e)
 			self.count+=0
-			self.coords = player.rect.center
-			self.x_change_mouse_player = (self.coords[0] - self.rect.centerx)
-			self.y_change_mouse_player = (self.coords[1] - self.rect.centery)
-			if math.sqrt(self.x_change_mouse_player**2+self.y_change_mouse_player**2)<self.agr:
-				if self.trigger==True or self.view==False:
-					self.um_count+=1
-					if self.um_count>25:
-						self.um_count=0
-						self.check_los_player()
+			if math.dist(self.rect.center,player.rect.center)<512:
+			
+				if self.trigger==True and self.view==True:
+					self.check_los()
+					self.trigger=False
 				else:
-					if self.trigger:
-						self.check_los()
-						self.um_count+=40
 					self.um_count+=1
-					if self.leader:
-						self.count+=1
-						self.l_count+=1
-
-						if self.count>4:
-							self.count=0
-							l_ghosts.add(GhostLeader(self.pos,self.rect,camera_group))
-
-						if self.l_count>180:
-							self.l_count=0
-							self.leader=False
-
-					if self.um_count>35:
+					if self.um_count>10:
 						self.um_count=0
 						self.check_los()
+
+						if self.leader:
+							self.count+=1
+							self.l_count+=1
+
+							if self.count>4:
+								self.count=0
+								l_ghosts.add(GhostLeader(self.pos,self.rect,camera_group))
+
+							if self.l_count>180:
+								self.l_count=0
+								self.leader=False
 
 					if self.m_mode==True:
-						self.move()
-					elif self.m_mode==2:
-						self.move_leader()
+						self.move(self.chosen)
 					else:
 						self.follow()
-				self.trigger=False
-			else:
-				self.trigger=True
 		self.check_hp()
 
+	def move(self,entity):
+		cord = entity.rect.center
+		x_change_mouse_player = (cord[0] - self.rect.centerx)
+		y_change_mouse_player = (cord[1] - self.rect.centery)
+		self.tan=math.atan2(y_change_mouse_player, x_change_mouse_player)
+		self.angle = math.degrees(self.tan)
+		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
+		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
+
+		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
+		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
+
+		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
+
+		self.collision()
+		self.pos += pygame.math.Vector2(self.velocity_x*self.nocol, self.velocity_y*self.nocol)
+		if self.mode!=1:
+			self.nocol=1
+		self.hitbox_rect.center = self.pos
+		self.rect.center = self.hitbox_rect.center
+
 	def follow(self):
-		self.angle = math.degrees(self.tan)
 		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
 		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
 
@@ -94,153 +109,81 @@ class Enemy(pygame.sprite.Sprite):
 		self.collision()
 
 		self.pos += pygame.math.Vector2(self.velocity_x*self.nocol, self.velocity_y*self.nocol)
-		self.nocol=1
-		self.hitbox_rect.center = self.pos
-		self.rect.center = self.hitbox_rect.center
-
-	def move(self):
-		cord = player.rect.center
-		x_change_mouse_player = (cord[0] - self.rect.centerx)
-		y_change_mouse_player = (cord[1] - self.rect.centery)
-		self.tan=math.atan2(y_change_mouse_player, x_change_mouse_player)
-		self.angle = math.degrees(self.tan)
-		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
-		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
-
-		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
-		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
-
-		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
-
-		self.collision()
-
-		self.pos += pygame.math.Vector2(self.velocity_x*self.nocol, self.velocity_y*self.nocol)
-		self.nocol=1
-		self.hitbox_rect.center = self.pos
-		self.rect.center = self.hitbox_rect.center
-	def move_leader(self):
-		cord = lider_list[-1].rect.center
-		x_change_mouse_player = (cord[0] - self.rect.centerx)
-		y_change_mouse_player = (cord[1] - self.rect.centery)
-		self.tan=math.atan2(y_change_mouse_player, x_change_mouse_player)
-		self.angle = math.degrees(self.tan)
-		self.image = pygame.transform.rotate(self.base_player_image, -self.angle-90)
-		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
-
-		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
-		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
-
-		self.collision_point=(self.rect.centerx+self.velocity_x,self.rect.centery+self.velocity_y)
-
-		self.collision()
-
-		self.pos += pygame.math.Vector2(self.velocity_x*self.nocol, self.velocity_y*self.nocol)
-		self.nocol=1
+		if self.mode!=1:
+			self.nocol=1
 		self.hitbox_rect.center = self.pos
 		self.rect.center = self.hitbox_rect.center
 
 	def check_los(self):
-		self.coords=[]
+		self.obj=[]
 		self.lst_1=[]
-		lst_2=[]
-		# life=[]
+		lst_2=[1,1]
+		self.fov=[0]
 		for ghost in ghosts:
 			self.lst_1.append(ghost)
-			# life.append(ghost.life_c)
 		for ghost in l_ghosts:
 			lst_2.append(ghost)
-		if len(self.lst_1)>1 and len(lst_2)>1:
-			if not(self.leader) and len(lider_list)>0:
-				for i in lider_list:
-					self.coords.insert(0,i)
-				self.coords.append(lst_2[-1])
-				self.coords.append(lst_2[-2])
-			else:
-				self.coords.append(self.lst_1[-1])
-				self.coords.append(self.lst_1[-2])
-				self.coords.append(self.lst_1[len(self.lst_1)//2])
-				# self.coords.append(self.lst_1[2])
-		self.coords.insert(0,player)
-		for e in self.coords:
-			self.flag=False
-			cord = e.rect.center
-			x_change_mouse_player = (cord[0] - self.rect.centerx)
-			y_change_mouse_player = (cord[1] - self.rect.centery)
-			self.tan=math.atan2(y_change_mouse_player, x_change_mouse_player)
-			velocity_x=math.cos(self.tan)*25
-			velocity_y=math.sin(self.tan)*25
-			for i in range(int(x_change_mouse_player//velocity_x)):
-				if i==0:
-					i=2
-				self.collision_point=(int((self.rect.centerx+i*velocity_x)),int((self.rect.centery+i*velocity_y)))
-				self.collision_rect=Dot(self.collision_point,camera_group)
-				for tree in trees:
-					if tree.rect.collidepoint(self.collision_point):
-						self.flag=True
-						break
-			if self.flag==False and e==player:
-				self.m_mode=True
-				break
-			if self.flag==False and e.leader==True:
-				self.m_mode=2
-				break
-			elif self.flag==False:
-				self.m_mode=False
-				break
+		if len(lider_list) and len(lst_2)>1 and not(self.leader):
+			self.obj.append(lider_list[0])
+			self.obj.append(lst_2[-1])
+			self.obj.append(lst_2[-2])
+			self.fov=[-5,0,5]
+		if len(self.lst_1)>1:
+				self.obj.append(self.lst_1[len(self.lst_1)//2])
+				self.obj.append(self.lst_1[len(self.lst_1)//3])
+				self.obj.append(self.lst_1[0])
+				self.obj.append(self.lst_1[1])
+				self.fov=[-5,0,5]
+				self.fov=[-5,0,5,20,-20,45,-45,70,-70,95,-95]
+		self.fov.append(160)
+		self.fov.append(-160)
+		self.obj.insert(0,player)
 
-	def check_los_player(self):
-		flag=False
-		cord = player.rect.center
-		x_change_mouse_player = (cord[0] - self.rect.centerx)
-		y_change_mouse_player = (cord[1] - self.rect.centery)
-		self.tan = math.atan2(y_change_mouse_player, x_change_mouse_player)
-		velocity_x=math.cos(self.tan)*29
-		velocity_y=math.sin(self.tan)*29
-		for i in range(int(x_change_mouse_player//velocity_x)):
-			if i==0:
-				i=1.5
-			collision_point=(int((self.rect.centerx+i*velocity_x)),int((self.rect.centery+i*velocity_y)))
-			# self.collision_rect=Dot(collision_point,camera_group)
-			for tree in trees:
-				if tree.rect.collidepoint(collision_point):
-					flag=True
-		if flag==False:
-			self.view=True
-		else:
-			self.view=False
+		# for i in np.arange(-50,50,15):
+		# 	self.fov.append(i)
+		self.m_mode=False
+		for e in self.fov:
+			tan=self.tan+math.radians(e)
+			velocity_x=math.cos(tan)*30
+			velocity_y=math.sin(tan)*30
+			for i in range(0,int(18)):
+				self.collision_point=(int((self.rect.centerx+i*velocity_x)),int((self.rect.centery+i*velocity_y)))
+				self.collision_rect=(Dot(self.collision_point,camera_group))
+				dots.add(self.collision_rect)
+				if pygame.sprite.spritecollideany(self.collision_rect, trees):
+					break
+			for entity in self.obj:
+				if pygame.sprite.spritecollideany(entity, dots):
+					self.m_mode=True
+					self.chosen=entity
+					if self.chosen==player: 
+						if self.mode==1:
+							self.view=True
+							self.nocol=0
+							EBullet((self.rect.centerx+velocity_x*1.5,self.rect.centery+velocity_y*1.5),self.tan,camera_group)
+						else:
+							self.nocol=1
+							self.view=True
+					
+					break
+			if self.m_mode==True:
+				break
 	def collision(self):
 		if player.rect.collidepoint(self.collision_point):
 			player.kill()
-		for ghost in ghosts:
-			if ghost.rect.collidepoint(self.collision_point):
-				self.call_cnt+=1
-				self.leader=True
-				self.l_count-=5
-				if self not in lider_list:
-					lider_list.append(self)
-				if self.call_cnt%2==0:
-					self.check_los()
-				if self.call_cnt>30:
-					self.call_cnt=0
-					for e in enemy:
-						cord = e.rect.center
-						x_change_mouse_player = (cord[0] - self.rect.centerx)
-						y_change_mouse_player = (cord[1] - self.rect.centery)
-						if math.sqrt(x_change_mouse_player**2+y_change_mouse_player**2)<self.agr:
-							e.um_count=0
-							e.move_leader()
-				ghost.kill()
-				break
 		# for e in enemy:
-		# 	if e.rect.collidepoint(self.collision_point) and e.collision_point!=self.collision_point:
-		# 		self.nocol=0
+		# 	if e.rect.colliderect(self.newrect) and e.rect!=self.newrect:
+		# 		self.nocol=0.1
 		for tree in trees:
-			if tree.rect.collidepoint(self.collision_point):
+			if tree.newrect.collidepoint(self.collision_point):
 				self.nocol=0
 				self.call_cnt+=1
 				if self.call_cnt>100:
 					self.call_cnt=0
+					self.tan=-self.tan
+					self.follow()
 					self.check_los()
+	
 	def check_hp(self):
 		if self.hp<1:
 			self.kill()
@@ -256,7 +199,7 @@ class Bullet(pygame.sprite.Sprite):
 		self.hitbox_rect = self.image.get_rect(center = pos)
 		self.rect = self.hitbox_rect.copy()
 		self.vector=self.hitbox_rect.center
-		self.tan=player.tan
+		self.tan=TabletShoot.global_tan_shoot
 		self.speed=15
 		self.coll_1=0
 		self.coll_2=0
@@ -298,14 +241,61 @@ class Bullet(pygame.sprite.Sprite):
 	def update(self):
 		self.move()
 
+class EBullet(pygame.sprite.Sprite):
+	def __init__(self,pos,tan,group):
+		super().__init__(group)
+		self.image = pygame.image.load('graphics/bullet.png').convert_alpha()
+		self.base_player_image= self.image
+		self.hitbox_rect = self.image.get_rect(center = pos)
+		self.rect = self.hitbox_rect.copy()
+		self.vector=self.hitbox_rect.center
+		self.tan=tan
+		self.speed=15
+		self.coll_1=0
+		self.coll_2=0
+		self.mode=player.mode
+		self.rand_bullets()
+		self.image = pygame.transform.rotate(self.base_player_image, -self.angle+90)
+	def move(self):
+
+		self.velocity_x=self.speed*math.cos(self.tan)
+		self.velocity_y=self.speed*math.sin(self.tan)
+		self.coll_1=(self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*4)
+		self.coll_2=(self.rect.centerx+self.velocity_x*2,self.rect.centery+self.velocity_y*2)
+		self.collision()
+		self.vector += pygame.math.Vector2(self.velocity_x, self.velocity_y)
+		self.hitbox_rect.center = self.vector
+		self.rect.center = self.hitbox_rect.center
+		
+			
+	def collision(self):
+		for tree in trees:
+			if tree.rect.colliderect(self.rect) or tree.rect.collidepoint(self.coll_1):
+				self.kill()
+		if player.rect.colliderect(self.rect):
+			player.kill()
+		if abs(self.rect.center[0])>5000 or abs(self.rect.center[1])>5000:
+			self.kill()
+		
+	def rand_bullets(self):
+		if self.mode=='sg':
+			rand=randrange(-110,110)
+			self.tan= self.tan+0.001*abs(rand) if self.tan>0 else self.tan-0.001*abs(rand)
+			self.vector=(self.vector[0]+0.1*rand,self.vector[1]+0.1*rand)
+		else:
+			rand=randrange(-100,100)
+			self.tan=self.tan+0.0005*rand
+		self.angle = math.degrees(self.tan)
+	def update(self):
+		self.move()
+
+
 class Tree(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
 		super().__init__(group)
 		self.image = pygame.image.load('graphics/tree.png').convert_alpha()
 		self.rect = self.image.get_rect(topleft = pos)
-		# self.rect.w=self.rect.w-8
-		# self.rect.h=self.rect.h-8
-		self.rect = pygame.Rect(self.rect.left, self.rect.top , 30, 30)
+		self.newrect = pygame.Rect(self.rect.left, self.rect.top , 30, 30)
 
 class Player(pygame.sprite.Sprite):
 	def __init__(self,pos,group):
@@ -321,6 +311,9 @@ class Player(pygame.sprite.Sprite):
 		self.p_colldown=30
 		self.count=0
 		self.ghost_cnt=0
+		self.tan=0
+		self.velocity_x=0
+		self.velocity_y=0
 
 	def input(self):
 		if self.p_colldown<=16:
@@ -332,56 +325,19 @@ class Player(pygame.sprite.Sprite):
 		else:
 			self.ghost_cnt=0
 			ghosts.add(GhostPlayer(self.pos,camera_group))
-		self.mouse_coords = pygame.mouse.get_pos()
-		display_surface = pygame.display.get_surface()
-		self.half_w = display_surface.get_size()[0] // 2
-		self.half_h = display_surface.get_size()[1] // 2
-		self.x_change_mouse_player = (self.mouse_coords[0] - self.half_w)
-		self.y_change_mouse_player = (self.mouse_coords[1] - self.half_h)
-		self.tan=math.atan2(self.y_change_mouse_player, self.x_change_mouse_player)
-		self.angle = math.degrees(self.tan)
-		self.image = pygame.transform.rotate(self.base_player_image, -self.angle+90)
-		self.rect = self.image.get_rect(center = self.hitbox_rect.center)
+		if TabletMove.global_move:
+			self.tan=TabletMove.global_tan_walk
+			self.angle = math.degrees(self.tan)
+			self.image = pygame.transform.rotate(self.base_player_image, -self.angle+90)
+			self.rect = self.image.get_rect(center = self.hitbox_rect.center)
 
 
 		self.velocity_x=self.speed*math.cos(self.tan)/math.sqrt(2)
 		self.velocity_y=self.speed*math.sin(self.tan)/math.sqrt(2)
 
-		keys = pygame.key.get_pressed()
-		if keys[pygame.K_w]:
-			self.coll_1=(self.rect.centerx+self.velocity_x*1.5,self.rect.centery+self.velocity_y*1.5)
-			self.collision()
-
-			self.pos += pygame.math.Vector2(self.velocity_x*self.nocol, self.velocity_y*self.nocol)
-			self.nocol=1
-			self.hitbox_rect.center = self.pos
-			self.rect.center = self.hitbox_rect.center
-		if keys[pygame.K_f]:
-			if self.p_colldown>=15:
-				self.p_colldown=0
-				self.coll_1=(self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*4)
-				self.coll_2=(self.rect.centerx+self.velocity_x*6,self.rect.centery+self.velocity_y*6)
-				Dot(self.coll_1,camera_group)
-				Dot(self.coll_2,camera_group)
-				self.punch_collision()
-		if pygame.mouse.get_pressed()[0]:
-			if self.mode=='sg' and self.count>70:
-				self.count=0
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-			elif self.mode=='ssg' and self.count>3:
-				self.count=0
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-			elif self.mode!='sg' and self.count>15:
-				self.count=0
-				Bullet((self.rect.centerx+self.velocity_x*4,self.rect.centery+self.velocity_y*2.5),camera_group)
-
 	def collision(self):
 		for tree in trees:
-			if tree.rect.collidepoint(self.coll_1):
+			if tree.newrect.collidepoint(self.coll_1):
 				self.nocol=0
 	def punch_collision(self):
 		for e in enemy:
@@ -402,7 +358,7 @@ class GhostPlayer(pygame.sprite.Sprite):
 		self.leader=False
 	def update(self):
 		self.life_c+=1
-		if self.life_c>70:
+		if self.life_c>75:
 			self.kill()
 class GhostLeader(pygame.sprite.Sprite):
 	def __init__(self,pos,rect,group):
@@ -426,8 +382,82 @@ class Dot(pygame.sprite.Sprite):
 		self.life_c=0
 	def update(self):
 		self.life_c+=1
-		if self.life_c>30:
+		if self.life_c>5:
 			self.kill()
+
+class TabletMove(pygame.sprite.Sprite):
+	def __init__(self):
+		self.display_surface = pygame.display.get_surface()
+		self.image=pygame.image.load('graphics/tablet.png').convert_alpha()
+		self.pos=(200,650)
+		self.rect = self.image.get_rect(topleft = self.pos)
+		TabletMove.global_move=False
+		TabletMove.global_tan_walk=0
+	def input(self):
+		self.mouse_coords = pygame.mouse.get_pos()
+		if self.rect.collidepoint(self.mouse_coords):
+			TabletMove.global_move=True
+			self.x_change_mouse_player = (self.mouse_coords[0] - self.rect.centerx)
+			self.y_change_mouse_player = (self.mouse_coords[1] - self.rect.centery)
+			TabletMove.global_tan_walk=math.atan2(self.y_change_mouse_player, self.x_change_mouse_player)
+			player.coll_1=(player.rect.centerx+player.velocity_x*1.5,player.rect.centery+player.velocity_y*1.5)
+			player.collision()
+
+			player.pos += pygame.math.Vector2(player.velocity_x*player.nocol, player.velocity_y*player.nocol)
+			player.nocol=1
+			player.hitbox_rect.center = player.pos
+			player.rect.center = player.hitbox_rect.center
+	def update(self):
+		self.input()
+
+class TabletShoot(pygame.sprite.Sprite):
+	def __init__(self):
+		self.display_surface = pygame.display.get_surface()
+		self.image=pygame.image.load('graphics/tablet.png').convert_alpha()
+		self.pos=(700,650)
+		self.rect = self.image.get_rect(topleft = self.pos)
+		TabletShoot.global_shoot=False
+		TabletShoot.global_tan_shoot=0
+	def input(self):
+		self.mouse_coords = pygame.mouse.get_pos()
+		if self.rect.collidepoint(self.mouse_coords):
+			TabletShoot.global_shoot=True
+			self.x_change_mouse_player = (self.mouse_coords[0] - self.rect.centerx)
+			self.y_change_mouse_player = (self.mouse_coords[1] - self.rect.centery)
+			TabletShoot.global_tan_shoot=math.atan2(self.y_change_mouse_player, self.x_change_mouse_player)
+			if TabletShoot.global_shoot:
+				velocity_x=player.speed*math.cos(TabletShoot.global_tan_shoot)/math.sqrt(2)
+				velocity_y=player.speed*math.sin(TabletShoot.global_tan_shoot)/math.sqrt(2)
+				if player.mode=='sg' and player.count>70:
+					player.count=0
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+				elif player.mode=='ssg' and player.count>3:
+					player.count=0
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+				elif player.mode!='sg' and player.count>15:
+					player.count=0
+					Bullet((player.rect.centerx+velocity_x*4,player.rect.centery+velocity_y*2.5),camera_group)
+	def update(self):
+		self.input()
+
+class TabletPunch(pygame.sprite.Sprite):
+	def __init__(self):
+		self.display_surface = pygame.display.get_surface()
+		self.image=pygame.image.load('graphics/punch.png').convert_alpha()
+		self.pos=(800,500)
+		self.rect = self.image.get_rect(topleft = self.pos)
+	def input(self):
+			if player.p_colldown>=15:
+				player.p_colldown=0
+				player.coll_1=(player.rect.centerx+player.velocity_x*4,player.rect.centery+player.velocity_y*4)
+				player.coll_2=(player.rect.centerx+player.velocity_x*6,player.rect.centery+player.velocity_y*6)
+				player.punch_collision()
+	def update(self):
+		self.input()
 
 class CameraGroup(pygame.sprite.Group):
 	def __init__(self):
@@ -452,20 +482,22 @@ class CameraGroup(pygame.sprite.Group):
 		# ground 
 		ground_offset = self.ground_rect.topleft - self.offset
 		self.display_surface.blit(self.ground_surf,ground_offset)
-
 		# active elements
 		for sprite in sorted(self.sprites(),key = lambda sprite: sprite.rect.centery):
 			offset_pos = sprite.rect.topleft - self.offset
 			self.display_surface.blit(sprite.image,offset_pos)
+		self.display_surface.blit(t_move.image,t_move.pos)
+		self.display_surface.blit(t_shoot.image,t_shoot.pos)
+		self.display_surface.blit(punch.image,punch.pos)
 
 
 pygame.init()
 
-# pygame.mixer.music.load('graphics/mobster.mp3')
-# pygame.mixer.music.set_volume(0.2)
-# pygame.mixer.music.play(-1)
+pygame.mixer.music.load('graphics/mobster.mp3')
+pygame.mixer.music.set_volume(0.2)
+pygame.mixer.music.play(-1)
 
-screen = pygame.display.set_mode((1920,1080))
+screen = pygame.display.set_mode((1280,960))
 clock = pygame.time.Clock()
 
 # setup 
@@ -475,6 +507,7 @@ player = Player((1740,520),camera_group)
 trees=pygame.sprite.Group()
 enemy=pygame.sprite.Group()
 ghosts=pygame.sprite.Group()
+dots=pygame.sprite.Group()
 l_ghosts=pygame.sprite.Group()
 coolmap=open('graphics/map.txt')
 l_index = -16
@@ -490,8 +523,8 @@ for line in coolmap:
 		lst.append(c)
 		if c=='1':
 			trees.add(Tree((c_index,l_index),camera_group))
-		elif c=='2':
-			enemy.add(Enemy(pygame.math.Vector2(c_index,l_index),camera_group))
+		elif c[0]=='2':
+			enemy.add(Enemy(pygame.math.Vector2(c_index,l_index),float(c[2:6]),camera_group))
 	lst.pop(-1)
 	goodmap.append(lst)
 
@@ -519,9 +552,17 @@ while lol:
 					c_index += 16
 					if c=='1':
 						trees.add(Tree((c_index,l_index),camera_group))
-					elif c=='2':
-						enemy.add(Enemy(pygame.math.Vector2(c_index,l_index),camera_group))
+					elif c[0]=='2':
+						enemy.add(Enemy(pygame.math.Vector2(c_index,l_index),float(c[2:6]),camera_group))
 	screen.fill('#C10087')
+	t_move=TabletMove()
+	t_move.update()
+	
+	t_shoot=TabletShoot()
+	t_shoot.update()
+
+	punch=TabletPunch()
+	punch.update()
 
 	camera_group.update()
 	camera_group.custom_draw(player)
